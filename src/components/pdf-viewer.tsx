@@ -58,9 +58,10 @@ export default function PDFViewer({
       setUseIframe(true);
       setPdfUrl(directDownloadUrl);
       setLoading(false);
-    } catch (err) {
+    } catch (e) {
       setError("Failed to process the Google Drive URL");
       setLoading(false);
+      console.log(e);
     }
   }, [gdriveUrl]);
 
@@ -99,7 +100,7 @@ export default function PDFViewer({
           src={pdfUrl}
           width="100%"
           height="100%"
-          frameBorder="0"
+          // frameBorder="0"
           allowFullScreen
           title="PDF Viewer"
           className="w-full h-full"
@@ -118,12 +119,12 @@ export default function PDFViewer({
           fileUrl={pdfUrl}
           plugins={[defaultLayoutPluginInstance]}
           defaultScale={SpecialZoomLevel.PageFit}
-          onError={(error) => {
-            console.error("PDF viewer error:", error);
-            setError(
-              "Failed to load PDF: " + (error.message || "Unknown error")
-            );
-          }}
+          // onError={(error:any) => {
+          //   console.error("PDF viewer error:", error);
+          //   setError(
+          //     "Failed to load PDF: " + (error.message || "Unknown error")
+          //   );
+          // }}
         />
       </Worker>
     </div>
