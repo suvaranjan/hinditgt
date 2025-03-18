@@ -2,13 +2,16 @@ import MCQReader from "@/components/mcq-reader";
 import syllabusData from "@/data/syllabus.json";
 import questionData from "@/data/mcqs/question.json";
 
-type SearchParams = {
-  "read-style"?: string;
-  "read-subject"?: string;
-  "read-topic"?: string;
-};
+// type SearchParams = {
+//   "read-style"?: string;
+//   "read-subject"?: string;
+//   "read-topic"?: string;
+// };
 
-export default function Page({ searchParams }: { searchParams: SearchParams }) {
+type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
+
+export default async function Page(props: { searchParams: SearchParams }) {
+  const searchParams = await props.searchParams;
   const readStyle = searchParams["read-style"] || "MCQs";
   const readSubject = searchParams["read-subject"] || "All";
   const readTopic = searchParams["read-topic"] || "All";
