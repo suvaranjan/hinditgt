@@ -7,12 +7,17 @@ export const generateStaticParams = async () =>
     slug: post._raw.flattenedPath,
   }));
 
-export const generateMetadata = ({ params }: { params: { slug: string } }) => {
+type Params = Promise<{ slug: string }>;
+
+export const generateMetadata = async (props: { params: Params }) => {
+  const params = await props.params;
   const post = allPosts.find((post) => post._raw.flattenedPath === params.slug);
   return { title: post?.title || "Post not found" };
 };
 
-const PostLayout = async ({ params }: { params: { slug: string } }) => {
+const PostLayout = async (props: { params: Params }) => {
+  const params = await props.params;
+
   const post = allPosts.find((post) => post._raw.flattenedPath === params.slug);
 
   if (!post) {
