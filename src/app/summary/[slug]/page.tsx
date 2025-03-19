@@ -18,15 +18,20 @@ export const generateMetadata = async (props: { params: Params }) => {
 const PostLayout = async (props: { params: Params }) => {
   const params = await props.params;
 
-  const post = allPosts.find((post) => post._raw.flattenedPath === params.slug);
+  // Decode the slug from the URL
+  const decodedSlug = decodeURIComponent(params.slug);
+
+  // Compare the decoded slug with post title
+  const post = allPosts.find(
+    (post) => post.title.replace(/\s+/g, "-") === decodedSlug
+  );
+
+  console.log("Decoded Slug:", decodedSlug);
+  console.log("All Posts:", allPosts);
 
   if (!post) {
     return <div>Post not found</div>;
   }
-
-  // Use dynamic import for the MDX component to avoid SSR issues
-  //   const Content = getMDXComponent(post.body.code);
-
   return (
     <article className="py-8 mx-auto max-w-xl">
       <div className="mb-8 text-center">

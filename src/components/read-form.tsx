@@ -28,21 +28,12 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
-import syllabusData from "@/data/syllabus.json";
-import questionData from "@/data/mcqs/question.json";
+import syllabusData from "@/data/syllabusv2.json"; // Updated import
 import { useRouter } from "next/navigation";
 
-// Extract subjects and topics from question.json
-const questionSubjects = new Set(questionData.map((item) => item.subject));
-const questionTopics = new Set(questionData.flatMap((item) => item.topic));
-
-// Filter syllabusData to only include matching subjects and topics
-const filteredSyllabus = syllabusData.filter(
-  (item) => questionSubjects.has(item.subject) && questionTopics.has(item.topic)
-);
-
+// Extract unique subjects from syllabusData
 const uniqueSubjects = Array.from(
-  new Set(filteredSyllabus.map((item) => item.subject))
+  new Set(syllabusData.syllabus.map((item) => item.subject))
 );
 
 const formSchema = z.object({
@@ -65,19 +56,12 @@ export default function ReadForm({ onFormSubmit }: ReadFormProps) {
     defaultValues: { contentType: "MCQs" },
   });
 
-  function slugify(text: string) {
-    return text
-      .toLowerCase()
-      .replace(/\s+/g, "-")
-      .replace(/[^\w-]+/g, "")
-      .replace(/--+/g, "-")
-      .trim();
-  }
-
   const selectedSubject = form.watch("subject");
-  const filteredTopics = filteredSyllabus.filter(
-    (item) => item.subject === selectedSubject
-  );
+
+  // Filter topics based on the selected subject
+  const filteredTopics =
+    syllabusData.syllabus.find((item) => item.subject === selectedSubject)
+      ?.topics || [];
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     if (values.contentType === "MCQs") {
@@ -88,11 +72,11 @@ export default function ReadForm({ onFormSubmit }: ReadFormProps) {
       }).toString();
 
       router.push(`/read?${queryString}`);
-      onFormSubmit();
-    } else {
-      const slugifiedTopic = slugify(values.topic);
-      router.push(`/summary/${slugifiedTopic}`);
-      onFormSubmit();
+    } else if (values.contentType === "summary") {
+      // Topic ko URL-friendly format me convert karna
+      const formattedTopic = values.topic.replace(/\s+/g, "-"); // Spaces ko "-" se replace karein
+
+      router.push(`/summary/${formattedTopic}`);
     }
   }
 
@@ -152,9 +136,9 @@ export default function ReadForm({ onFormSubmit }: ReadFormProps) {
                             <SelectValue placeholder="Select a topic" />
                           </SelectTrigger>
                           <SelectContent>
-                            {filteredTopics.map((item) => (
-                              <SelectItem key={item.topic} value={item.topic}>
-                                {item.topic} ({item.writer})
+                            {filteredTopics.map((topic) => (
+                              <SelectItem key={topic.name} value={topic.name}>
+                                {topic.name} ({topic.author})
                               </SelectItem>
                             ))}
                           </SelectContent>

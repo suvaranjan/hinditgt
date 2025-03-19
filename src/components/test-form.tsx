@@ -28,19 +28,8 @@ import {
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
-import syllabusData from "@/data/syllabus.json";
-import questionData from "@/data/mcqs/question.json";
+import syllabusData from "@/data/syllabusv2.json"; // Updated import
 import { useRouter } from "next/navigation";
-
-const syllabusSubjects = new Set(syllabusData.map((item) => item.subject));
-const questionSubjects = new Set(questionData.map((item) => item.subject));
-const availableSubjects = Array.from(
-  new Set(
-    [...syllabusSubjects].filter((subject) => questionSubjects.has(subject))
-  )
-);
-
-const questionTopics = new Set(questionData.flatMap((item) => item.topic));
 
 const formSchema = z.object({
   subject: z.string({ required_error: "Please select a subject" }),
@@ -68,39 +57,56 @@ export default function TestForm({ onFormSubmit }: TestFormProps) {
   const selectedSubject = watch("subject");
   const selectedTopic = watch("topic");
 
+  // Extract unique subjects from syllabusData
+  const availableSubjects = Array.from(
+    new Set(syllabusData.syllabus.map((item) => item.subject))
+  );
+
   // Compute filtered topics and max questions dynamically
   const { filteredTopics, maxQuestions } = useMemo(() => {
-    let topics = [];
+    let topics: string[] = [];
     let maxQuestions = 0;
 
     if (selectedSubject === "All") {
-      topics = Array.from(questionTopics);
-      maxQuestions = questionData.reduce(
-        (total, item) => total + item.questions.length,
+      // If "All" is selected, include all topics and questions
+      topics = syllabusData.syllabus.flatMap((subject) =>
+        subject.topics.map((topic) => topic.name)
+      );
+      maxQuestions = syllabusData.syllabus.reduce(
+        (total, subject) =>
+          total +
+          subject.topics.reduce(
+            (subTotal, topic) => subTotal + (topic.questions?.length || 0),
+            0
+          ),
         0
       );
     } else {
-      const subjectData = questionData.filter(
-        (item) => item.subject === selectedSubject
+      // Filter topics and questions for the selected subject
+      const subjectData = syllabusData.syllabus.find(
+        (subject) => subject.subject === selectedSubject
       );
-      topics = subjectData.flatMap((item) => item.topic);
-      maxQuestions = subjectData.reduce(
-        (total, item) => total + item.questions.length,
-        0
-      );
+      if (subjectData) {
+        topics = subjectData.topics.map((topic) => topic.name);
+        maxQuestions = subjectData.topics.reduce(
+          (total, topic) => total + (topic.questions?.length || 0),
+          0
+        );
+      }
     }
 
+    // If a specific topic is selected, update maxQuestions
     if (selectedTopic && selectedTopic !== "All") {
-      const topicQuestions = questionData.find(
-        (item) => item.topic === selectedTopic
-      )?.questions.length;
-      maxQuestions = topicQuestions ?? maxQuestions;
+      const topicData = syllabusData.syllabus
+        .flatMap((subject) => subject.topics)
+        .find((topic) => topic.name === selectedTopic);
+      maxQuestions = topicData?.questions?.length || maxQuestions;
     }
 
     return { filteredTopics: topics, maxQuestions };
   }, [selectedSubject, selectedTopic]);
 
-  // 🔹 Instantly update `numberOfQuestions` & `timer` when `maxQuestions` changes
+  // 🔹 Update `numberOfQuestions` & `timer` when `maxQuestions` changes
   useEffect(() => {
     if (maxQuestions > 0) {
       setValue("numberOfQuestions", Math.min(10, maxQuestions)); // Set default as min(10, max)

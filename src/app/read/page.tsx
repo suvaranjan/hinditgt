@@ -1,12 +1,5 @@
 import MCQReader from "@/components/mcq-reader";
-import syllabusData from "@/data/syllabus.json";
-import questionData from "@/data/mcqs/question.json";
-
-// type SearchParams = {
-//   "read-style"?: string;
-//   "read-subject"?: string;
-//   "read-topic"?: string;
-// };
+import syllabusData from "@/data/syllabusv2.json"; // Updated import
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
 
@@ -17,22 +10,29 @@ export default async function Page(props: { searchParams: SearchParams }) {
   const readTopic = searchParams["read-topic"] || "All";
 
   // Filter questions based on subject and topic
-  const filteredQuestions = questionData
+  const filteredQuestions = syllabusData.syllabus
     .filter(
-      (item) =>
-        (readSubject === "All" || item.subject === readSubject) &&
-        (readTopic === "All" || item.topic === readTopic)
+      (subject) => readSubject === "All" || subject.subject === readSubject // Filter by subject
     )
-    .flatMap((item) => item.questions); // Extracting all matching questions
+    .flatMap(
+      (subject) =>
+        subject.topics
+          .filter(
+            (topic) => readTopic === "All" || topic.name === readTopic // Filter by topic
+          )
+          .flatMap((topic) => topic.questions || []) // Extract questions
+    );
 
   // Find the topic details from syllabus data
   const topicDetails =
     readTopic !== "All"
-      ? syllabusData.find((item) => item.topic === readTopic)
+      ? syllabusData.syllabus
+          .flatMap((subject) => subject.topics)
+          .find((topic) => topic.name === readTopic)
       : null;
 
   const title = topicDetails
-    ? `Sub : ${topicDetails.topic} (${topicDetails.writer})`
+    ? `Sub : ${topicDetails.name} (${topicDetails.author})`
     : readSubject !== "All"
     ? `${readSubject}`
     : "Reading Material";
